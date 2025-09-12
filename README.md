@@ -13,21 +13,13 @@ By default, it performs safe **sequential processing**, but you can switch to **
 
 ## How to Build
 
-1.  In your terminal, navigate to the `llm-batch` directory of this repository.
+Simply run the following command in the project root directory. It will handle dependencies and create the executables.
 
-2.  Initialize Go modules (only necessary the first time).
+```bash
+make build
+```
 
-    ```bash
-    go mod init llm-batch
-    ```
-
-3.  Run the following command to build:
-
-    ```bash
-    make build
-    ```
-
-4.  Once the build is complete, executable files for each OS and architecture will be generated in the `bin/` directory.
+Once the build is complete, executable files for each OS and architecture will be generated in the `bin/` directory.
 
     *   `llm-batch-linux-amd64`
     *   `llm-batch-darwin-universal` (macOS Universal Binary for Intel & Apple Silicon)

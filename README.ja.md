@@ -13,21 +13,13 @@
 
 ## ビルド方法
 
-1.  ターミナルでこのリポジトリの `llm-batch` ディレクトリに移動します。
+プロジェクトのルートディレクトリで、以下のコマンドを実行するだけです。依存関係の解決と実行ファイルの生成が自動的に行われます。
 
-2.  Goモジュールを初期化します。（初回のみ必要）
+```bash
+make build
+```
 
-    ```bash
-    go mod init llm-batch
-    ```
-
-3.  以下のコマンドを実行してビルドします。
-
-    ```bash
-    make build
-    ```
-
-4.  ビルドが完了すると、`bin/` ディレクトリ内に各OS・アーキテクチャ向けの実行可能ファイルが生成されます。
+ビルドが完了すると、`bin/` ディレクトリ内に各OS・アーキテクチャ向けの実行可能ファイルが生成されます。
 
       * `llm-batch-linux-amd64`
       * `llm-batch-darwin-universal` (macOS Universal Binary for Intel & Apple Silicon)

@@ -18,6 +18,8 @@ all: build
 
 # Build binaries for all supported platforms
 build:
+	@echo "Tidying Go modules..."
+	@go mod tidy
 	@mkdir -p $(LINUX_DIR) $(WINDOWS_DIR) $(DARWIN_DIR)
 	@echo "Building for linux/amd64..."
 	@GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(LINUX_DIR)/$(BINARY_NAME)
