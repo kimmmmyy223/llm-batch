@@ -17,22 +17,22 @@ import (
 // version is set by the linker during the build process
 var version = "dev"
 
-// Job represents a single item to be processed.
+// Job represents a batch of items to be processed.
 type Job struct {
 	ID        int
 	JSONBytes []byte
-	ItemData  interface{}
+	ItemData  []interface{} // A batch of items
 }
 
 // Result defines the structure for the output.
 type Result struct {
-	ID     int         `json:"-"` // Used for sorting, ignored in JSON output
-	Input  interface{} `json:"input"`
-	Output string      `json:"output"`
-	Error  error       `json:"-"` // Internal use, ignored in JSON output
+	ID     int           `json:"-"` // Used for sorting, ignored in JSON output
+	Input  []interface{} `json:"input"`
+	Output string        `json:"output"`
+	Error  error         `json:"-"` // Internal use, ignored in JSON output
 }
 
-// processItem executes the llm-cli command.
+// processItem executes the llm-cli command with a batch of items.
 func processItem(jsonBytes []byte, systemPrompt string, profile string, stream bool) (string, error) {
 	args := []string{"prompt", "--system-prompt", systemPrompt, "--user-prompt-file", "-"}
 	if profile != "" {
@@ -45,11 +45,9 @@ func processItem(jsonBytes []byte, systemPrompt string, profile string, stream b
 	llmCmd := exec.Command("llm-cli", args...)
 
 	if stream {
-		// In stream mode, pipe output directly to the user's terminal
 		llmCmd.Stdout = os.Stdout
 		llmCmd.Stderr = os.Stderr
 	} else {
-		// In normal mode, capture output for structured formatting
 		var outb, errb bytes.Buffer
 		llmCmd.Stdout = &outb
 		llmCmd.Stderr = &errb
@@ -74,13 +72,11 @@ func processItem(jsonBytes []byte, systemPrompt string, profile string, stream b
 
 	if stream {
 		if err != nil {
-			// In stream mode, stderr is already shown, just return the error
 			return "", err
 		}
-		return "", nil // No output string to return in stream mode
+		return "", nil
 	}
 
-	// Non-stream mode
 	if err != nil {
 		if stderrBuf, ok := llmCmd.Stderr.(*bytes.Buffer); ok {
 			return "", fmt.Errorf("llm-cli exited with an error: %w\nstderr: %s", err, stderrBuf.String())
@@ -98,7 +94,7 @@ func processItem(jsonBytes []byte, systemPrompt string, profile string, stream b
 func worker(wg *sync.WaitGroup, jobs <-chan Job, results chan<- Result, systemPrompt, profile string) {
 	defer wg.Done()
 	for job := range jobs {
-		output, err := processItem(job.JSONBytes, systemPrompt, profile, false) // stream is always false for workers
+		output, err := processItem(job.JSONBytes, systemPrompt, profile, false)
 		if err != nil {
 			results <- Result{ID: job.ID, Error: err}
 		} else {
@@ -128,22 +124,24 @@ func peekFirstNonWhitespace(r *bufio.Reader) (byte, error) {
 func main() {
 	log.SetFlags(0)
 
-	// Define flags, aligning with llm-cli where appropriate
+	// Define flags
 	systemPrompt := flag.String("P", "", "The system prompt text.")
 	promptFile := flag.String("F", "", "Path to a file containing the system prompt.")
 	profile := flag.String("L", "", "Name of the llm-cli profile to use.")
 	concurrency := flag.Int("c", 1, "Number of concurrent processes.")
-	stream := flag.Bool("stream", false, "Enable stream mode for debugging. Forces -c=1 and -o=text.")
+	stream := flag.Bool("stream", false, "Enable stream mode. Forces -c=1, -n=1 and -o=text.")
 	showVersion := flag.Bool("version", false, "Print version information and exit.")
+	lines := flag.Int("n", 1, "Number of lines to batch together for each LLM call.")
 
 	// Handle aliased flags
 	var outputFormat string
 	flag.StringVar(&outputFormat, "o", "text", "Output format: 'text', 'json', or 'jsonl'.")
 	flag.StringVar(&outputFormat, "format", "text", "Alias for -o.")
+	flag.IntVar(lines, "lines", 1, "Alias for -n.")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s (-P \"<prompt>\" | -F <file>) [options] [input_file]\n\n", os.Args[0])
-		fmt.Fprintln(os.Stderr, "A tool to process JSON array/JSONL data by sending each item to an LLM.")
+		fmt.Fprintln(os.Stderr, "A tool to process JSON array/JSONL data by sending each item/batch to an LLM.")
 		fmt.Fprintln(os.Stderr, "\nArguments:")
 		fmt.Fprintln(os.Stderr, "  [input_file]    Input JSON array or JSONL file. Reads from stdin if omitted.")
 		fmt.Fprintln(os.Stderr, "\nOptions:")
@@ -165,10 +163,17 @@ func main() {
 			log.Println("Warning: Stream mode enabled. Forcing output format to 'text'.")
 			outputFormat = "text"
 		}
+		if *lines != 1 {
+			log.Println("Warning: Stream mode enabled. Forcing batch size (-n) to 1.")
+			*lines = 1
+		}
 	}
 
 	if *concurrency < 1 {
 		log.Fatal("Error: Concurrency (-c) must be at least 1.")
+	}
+	if *lines < 1 {
+		log.Fatal("Error: Batch size (-n) must be at least 1.")
 	}
 	if outputFormat != "text" && outputFormat != "json" && outputFormat != "jsonl" {
 		log.Fatal("Error: Invalid output format. Must be 'text', 'json', or 'jsonl'.")
@@ -207,17 +212,16 @@ func main() {
 		log.Fatalf("Error reading from input %s: %v", inputName, err)
 	}
 
-	// Handle stream mode separately with a simple loop
 	if *stream {
 		handleStream(bufferedReader, firstByte, inputName, systemPromptContent, *profile)
 		return
 	}
 
-	// Concurrent processing logic
-	handleConcurrent(bufferedReader, firstByte, inputName, systemPromptContent, *profile, outputFormat, *concurrency)
+	handleConcurrent(bufferedReader, firstByte, inputName, systemPromptContent, *profile, outputFormat, *concurrency, *lines)
 }
 
 // handleStream processes items sequentially and prints output directly.
+// Note: Batching (-n) is forced to 1 in stream mode.
 func handleStream(reader *bufio.Reader, firstByte byte, inputName, systemPrompt, profile string) {
 	log.Printf("Stream mode enabled. Processing items from %s sequentially...", inputName)
 	itemCount := 0
@@ -255,7 +259,7 @@ func handleStream(reader *bufio.Reader, firstByte byte, inputName, systemPrompt,
 }
 
 // handleConcurrent processes items using a worker pool.
-func handleConcurrent(reader *bufio.Reader, firstByte byte, inputName, systemPrompt, profile, format string, concurrency int) {
+func handleConcurrent(reader *bufio.Reader, firstByte byte, inputName, systemPrompt, profile, format string, concurrency, batchSize int) {
 	jobs := make(chan Job, concurrency)
 	results := make(chan Result, 100)
 	var wg sync.WaitGroup
@@ -265,42 +269,61 @@ func handleConcurrent(reader *bufio.Reader, firstByte byte, inputName, systemPro
 		go worker(&wg, jobs, results, systemPrompt, profile)
 	}
 
-	itemCount := 0
+	jobCount := 0
 	go func() {
 		defer close(jobs)
+		sendBatch := func(batch []interface{}) {
+			if len(batch) == 0 {
+				return
+			}
+			jobCount++
+			// For batching, we wrap the items in a JSON array.
+			jsonBytes, err := json.Marshal(batch)
+			if err != nil {
+				log.Printf("Error marshalling batch %d: %v. Skipping.", jobCount, err)
+				return
+			}
+			jobs <- Job{ID: jobCount, JSONBytes: jsonBytes, ItemData: batch}
+		}
+
+		var batch []interface{}
 		if firstByte == '[' {
-			log.Printf("Detected JSON array format in %s. Processing items...", inputName)
+			log.Printf("Detected JSON array format in %s. Processing in batches of %d...", inputName, batchSize)
 			decoder := json.NewDecoder(reader)
 			decoder.Token() // consume '['
 			for decoder.More() {
-				itemCount++
 				var item interface{}
 				if err := decoder.Decode(&item); err != nil {
-					log.Printf("Error decoding JSON array item %d: %v. Skipping.", itemCount, err)
+					log.Printf("Error decoding JSON array item: %v. Skipping.", err)
 					continue
 				}
-				jsonBytes, _ := json.Marshal(item)
-				jobs <- Job{ID: itemCount, JSONBytes: jsonBytes, ItemData: item}
+				batch = append(batch, item)
+				if len(batch) >= batchSize {
+					sendBatch(batch)
+					batch = nil // Reset batch
+				}
 			}
 		} else {
-			log.Printf("Assuming JSONL format for %s. Processing lines...", inputName)
+			log.Printf("Assuming JSONL format for %s. Processing in batches of %d...", inputName, batchSize)
 			scanner := bufio.NewScanner(reader)
 			for scanner.Scan() {
 				lineBytes := scanner.Bytes()
 				if len(bytes.TrimSpace(lineBytes)) == 0 {
 					continue
 				}
-				itemCount++
-				jsonLine := make([]byte, len(lineBytes))
-				copy(jsonLine, lineBytes)
 				var item interface{}
-				if err := json.Unmarshal(jsonLine, &item); err != nil {
-					log.Printf("Error decoding JSONL item %d: %v. Skipping.", itemCount, err)
+				if err := json.Unmarshal(lineBytes, &item); err != nil {
+					log.Printf("Error decoding JSONL line: %v. Skipping line.", err)
 					continue
 				}
-				jobs <- Job{ID: itemCount, JSONBytes: jsonLine, ItemData: item}
+				batch = append(batch, item)
+				if len(batch) >= batchSize {
+					sendBatch(batch)
+					batch = nil // Reset batch
+				}
 			}
 		}
+		sendBatch(batch) // Send any remaining items
 	}()
 
 	go func() {
@@ -309,25 +332,27 @@ func handleConcurrent(reader *bufio.Reader, firstByte byte, inputName, systemPro
 	}()
 
 	processedResults := make(map[int]Result)
+	totalItemsProcessed := 0
 	for res := range results {
 		if res.Error != nil {
-			log.Printf("Error processing item %d: %v. Skipping.", res.ID, res.Error)
+			log.Printf("Error processing batch %d: %v. Skipping.", res.ID, res.Error)
 		} else {
 			processedResults[res.ID] = res
+			totalItemsProcessed += len(res.Input)
 		}
 	}
 
 	jsonEncoder := json.NewEncoder(os.Stdout)
 	if format == "json" {
 		var finalResults []Result
-		for i := 1; i <= itemCount; i++ {
+		for i := 1; i <= jobCount; i++ {
 			if res, ok := processedResults[i]; ok {
 				finalResults = append(finalResults, res)
 			}
 		}
 		jsonEncoder.Encode(finalResults)
 	} else {
-		for i := 1; i <= itemCount; i++ {
+		for i := 1; i <= jobCount; i++ {
 			res, ok := processedResults[i]
 			if !ok {
 				continue
@@ -344,10 +369,9 @@ func handleConcurrent(reader *bufio.Reader, firstByte byte, inputName, systemPro
 		}
 	}
 
-	if itemCount == 0 {
+	if jobCount == 0 {
 		log.Printf("Warning: No JSON items were processed from %s.", inputName)
 	} else {
-		log.Printf("\nSuccessfully processed %d item(s).", len(processedResults))
+		log.Printf("\nSuccessfully processed %d item(s) in %d batch(es).", totalItemsProcessed, len(processedResults))
 	}
 }
-
